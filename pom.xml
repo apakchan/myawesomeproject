@@ -30,6 +30,14 @@
             <version>1.18.20</version> <!-- 根据最新版本更新此处 -->
             <scope>provided</scope>
         </dependency>
+
+<!--        netty -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.66.Final</version>
+        </dependency>
+
     </dependencies>
 
     <build>

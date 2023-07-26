@@ -11,15 +11,18 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
+import java.util.concurrent.TimeUnit;
+
 public class WebSocketServer {
 
     public static void main(String[] args) throws Exception {
-        int port = 8080;
+        int port = 6379;
 
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
+            final OrderWebSocketHandler orderWebSocketHandler = new OrderWebSocketHandler();
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
@@ -27,24 +30,19 @@ public class WebSocketServer {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline pipeline = socketChannel.pipeline();
-
                             // 添加HTTP协议编解码器
                             pipeline.addLast(new HttpServerCodec());
                             // 添加HTTP对象聚合器，用于处理HTTP消息的聚合
                             pipeline.addLast(new HttpObjectAggregator(65536));
                             // 添加WebSocket协议处理器，用于处理WebSocket握手和帧的处理
                             pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
-
                             // 添加自定义的WebSocket处理器
-                            pipeline.addLast(new WebSocketHandler());
+                            pipeline.addLast(orderWebSocketHandler);
                         }
                     });
-
             Channel channel = bootstrap.bind(port).sync().channel();
             System.out.println("WebSocket服务器已启动，端口号：" + port);
 
-            // 可以在需要的时候主动向前端发送通知消息
-            sendNotificationToAllClients(channel);
 
             channel.closeFuture().sync();
         } finally {
@@ -53,11 +51,5 @@ public class WebSocketServer {
         }
     }
 
-    private static void sendNotificationToAllClients(Channel channel) {
-        // 模拟向所有连接的客户端发送通知消息
-        String notification = "这是一个来自服务器的通知消息";
-        WebSocketFrame frame = new TextWebSocketFrame(notification);
-        channel.writeAndFlush(frame);
-    }
 }
 
